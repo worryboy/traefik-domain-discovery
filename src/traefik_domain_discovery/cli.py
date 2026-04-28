@@ -10,6 +10,7 @@ from .docker_discovery import discover_from_docker
 from .exporters import export_hosts, export_selection_template
 from .file_provider import discover_from_file_provider
 from .models import DiscoveredHost, merge_hosts
+from .traefik_api import discover_from_traefik_api
 
 DEFAULT_OUTPUT_PATH = Path(tempfile.gettempdir()) / "traefik-domain-discovery" / "discovered-hosts.yaml"
 
@@ -20,6 +21,7 @@ def build_parser() -> argparse.ArgumentParser:
         description="Discover Traefik hostnames for review before Dynamic DNS target selection.",
     )
     parser.add_argument("--docker", action="store_true", help="inspect running Docker containers")
+    parser.add_argument("--traefik-api", help="read active Traefik router data from this API URL")
     parser.add_argument("--file-provider-dir", help="read Traefik dynamic YAML config from this directory")
     parser.add_argument("--access-log", help="read Traefik JSON access log and mark discovered hosts as seen")
     parser.add_argument(
@@ -69,13 +71,16 @@ def main(argv: list[str] | None = None) -> int:
 
 
 def run_discovery(args: argparse.Namespace) -> list[DiscoveredHost]:
-    if not args.docker and not args.file_provider_dir:
-        raise ValueError("choose at least one discovery source: --docker or --file-provider-dir")
+    if not args.docker and not args.traefik_api and not args.file_provider_dir:
+        raise ValueError("choose at least one discovery source: --docker, --traefik-api, or --file-provider-dir")
 
     discovered: list[DiscoveredHost] = []
 
     if args.docker:
         discovered.extend(discover_from_docker())
+
+    if args.traefik_api:
+        discovered.extend(discover_from_traefik_api(args.traefik_api))
 
     if args.file_provider_dir:
         discovered.extend(discover_from_file_provider(Path(args.file_provider_dir)))

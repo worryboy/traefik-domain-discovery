@@ -15,6 +15,8 @@ class DiscoveredHost:
     router_name: str | None = None
     router_label_key: str | None = None
     source_file: str | None = None
+    provider: str | None = None
+    api_view: str | None = None
     rule: str | None = None
     rule_type: str = "host"
     regex_based: bool = False
@@ -61,9 +63,10 @@ def merge_hosts(hosts: list[DiscoveredHost]) -> list[DiscoveredHost]:
                 "router_name": host.router_name,
                 "router_label_key": host.router_label_key,
                 "source_file": host.source_file,
+                "provider": host.provider,
+                "api_view": host.api_view,
                 "rule": host.rule,
             }
         )
 
     return sorted(merged.values(), key=lambda item: (item.host.lower(), item.source_type, item.source))
-
