@@ -1,43 +1,13 @@
 # Architecture
 
-`traefik-domain-discovery` is intentionally a discovery and export tool. It does not update DNS records and does not contain DNS provider API code.
+`traefik-domain-discovery` is a discovery and export tool only. It does not update DNS.
 
-## Discovery Sources
+- Primary source: Docker labels such as `traefik.http.routers.*.rule`
+- Optional source: Traefik file-provider YAML
+- Optional enrichment: Traefik JSON access logs
 
-The MVP supports three signals:
+`Host(...)` rules become plain hostname candidates. `HostRegexp(...)` rules are kept, but marked as regex-based for review.
 
-- Docker labels from currently running containers, especially `traefik.http.routers.*.rule`
-- Traefik dynamic file-provider YAML config, when a directory is supplied
-- Traefik JSON access logs, when a log path is supplied
+Results are deduplicated by host and rule type. Access logs only mark whether a discovered host was seen; they are not treated as the source of truth.
 
-Docker labels are the primary source because many real Traefik deployments define routers through container labels rather than static files.
-
-## Rule Parsing
-
-The parser extracts arguments from:
-
-- `Host(...)`
-- `HostRegexp(...)`
-
-`Host(...)` entries are treated as plain host candidates. `HostRegexp(...)` entries are preserved, but marked as regex-based because they are not automatically safe to use as direct DNS targets.
-
-## Deduplication
-
-Discovered entries are deduplicated by normalized host value and rule type. The first source remains the primary source, and additional sources are retained under `extra_sources` so review metadata is not lost.
-
-## Access Logs
-
-Access logs are enrichment only. A hostname seen in logs may be useful evidence that a route is active, but logs are not complete inventory:
-
-- quiet services may not appear
-- retention may be short
-- bots and invalid requests may create noise
-- internal-only routes may never be logged externally
-
-For that reason, logs only set `seen_in_access_log` on already discovered hostnames.
-
-## Review Before Dynamic DNS
-
-Not every Traefik hostname should become a Dynamic DNS target. Some names may be internal, temporary, delegated elsewhere, covered by wildcard DNS, or intentionally not public.
-
-The selection template is deliberately disabled by default. A future DNS updater can consume a reviewed target file, but this project stops at discovery and preparation.
+Not every Traefik hostname should become a Dynamic DNS target, so the generated selection template stays review-first and disabled by default.
