@@ -64,21 +64,23 @@ Quick local example with the included sample config:
 
 ## Output
 
-The main output is a deduplicated list of discovered hosts with review metadata such as:
+The main output is a compact, deduplicated review file. Each host is listed alphabetically with a short `sources` list showing where it came from:
 
-- `host`
-- `source`
-- `source_type`
-- `provider`
-- `container_name`
-- `service_name`
-- `compose_project`
-- `router_name`
-- `seen_in_access_log`
-- `selected`
-- `notes`
+```yaml
+hosts:
+  - host: app.example.com
+    seen_in_access_log: true
+    sources:
+      - type: docker_label
+        container: web
+        service: app
+        project: homelab
+      - type: file_provider
+        service: app-service
+        file: dynamic.yaml
+```
 
-`HostRegexp(...)` rules are kept, but marked as regex-based so they can be reviewed separately.
+`HostRegexp(...)` rules are kept and include a short review note, but router names, rule text, label keys, and selection flags are not included in the default discovery output.
 
 When the Traefik API is available, `--docker` plus `--traefik-api` is the preferred practical path. File-provider parsing stays optional.
 

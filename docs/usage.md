@@ -35,4 +35,15 @@ Sample config only:
   --output /tmp/discovered-hosts.yaml
 ```
 
+Default output is compact and intended for human review:
+
+```yaml
+hosts:
+  - host: app.example.com
+    sources:
+      - type: file_provider
+        service: app-service
+        file: examples/config.example.yaml
+```
+
 Without `--output`, the default file goes to `/tmp/traefik-domain-discovery/discovered-hosts.yaml` on a typical Linux host.
