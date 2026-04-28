@@ -8,6 +8,8 @@ It does:
 - optionally read active routers from the Traefik API
 - optionally read Traefik file-provider config
 - optionally mark discovered hosts as seen in access logs
+- derive a likely DNS zone for each host
+- optionally guess the DNS provider from authoritative nameservers
 - export reviewable YAML and JSON
 
 It does not:
@@ -62,6 +64,15 @@ Quick local example with the included sample config:
   --json-output /tmp/discovered-hosts.json
 ```
 
+Optional provider guessing:
+
+```bash
+./traefik-domain-discover \
+  --docker \
+  --guess-dns-provider \
+  --output /tmp/discovered-hosts.yaml
+```
+
 ## Output
 
 The main output is a compact, deduplicated review file. Each host is listed alphabetically with a short `sources` list showing where it came from:
@@ -69,6 +80,10 @@ The main output is a compact, deduplicated review file. Each host is listed alph
 ```yaml
 hosts:
   - host: app.example.com
+    zone: example.com
+    dns_provider_guess: internetx
+    dns_provider_confidence: medium
+    provider_detection_source: nameserver
     seen_in_access_log: true
     sources:
       - type: docker_label
@@ -81,6 +96,8 @@ hosts:
 ```
 
 `HostRegexp(...)` rules are kept and include a short review note, but router names, rule text, label keys, and selection flags are not included in the default discovery output.
+
+Zone detection is a lightweight heuristic. It uses the registrable domain shape for common cases, including common multi-part suffixes such as `co.uk`; it does not ship a full public suffix database. Provider guessing is off by default and, when enabled, only uses local DNS tools such as `dig`, `host`, or `nslookup` to inspect authoritative nameservers. Treat both fields as review hints, not source of truth.
 
 When the Traefik API is available, `--docker` plus `--traefik-api` is the preferred practical path. File-provider parsing stays optional.
 

@@ -2,6 +2,10 @@ schema_version: 1
 intent: discovery-review-only
 hosts:
   - host: app.example.com
+    zone: example.com
+    dns_provider_guess: internetx
+    dns_provider_confidence: medium
+    provider_detection_source: nameserver
     seen_in_access_log: true
     sources:
       - type: docker_label
@@ -12,16 +16,19 @@ hosts:
         service: app-service
         file: examples/config.example.yaml
   - host: traefik.example.com
+    zone: example.com
     sources:
       - type: file_provider
         service: api@internal
         file: examples/config.example.yaml
   - host: www.app.example.com
+    zone: example.com
     sources:
       - type: file_provider
         service: app-service
         file: examples/config.example.yaml
   - host: "{subdomain:[a-z0-9-]+}.preview.example.com"
+    zone: example.com
     notes: HostRegexp requires review before use as a plain DNS target.
     sources:
       - type: file_provider

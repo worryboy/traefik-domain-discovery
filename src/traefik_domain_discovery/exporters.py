@@ -30,7 +30,7 @@ def export_selection_template(hosts: list[DiscoveredHost], output_path: str | Pa
                 "host": host.host,
                 "enabled": False,
                 "dns_provider": None,
-                "zone": None,
+                "zone": host.zone,
                 "target_type": "A",
                 "source": host.source,
                 "source_type": host.source_type,
@@ -54,6 +54,10 @@ def _document(hosts: list[DiscoveredHost]) -> dict[str, object]:
 
 def _compact_host(host: DiscoveredHost) -> dict[str, object]:
     data: dict[str, object] = {"host": host.host}
+    _copy_if_present(data, "zone", host.zone)
+    _copy_if_present(data, "dns_provider_guess", host.dns_provider_guess)
+    _copy_if_present(data, "dns_provider_confidence", host.dns_provider_confidence)
+    _copy_if_present(data, "provider_detection_source", host.provider_detection_source)
     if host.seen_in_access_log:
         data["seen_in_access_log"] = True
     if host.notes:

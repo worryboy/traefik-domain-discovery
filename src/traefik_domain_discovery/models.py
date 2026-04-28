@@ -24,6 +24,9 @@ class DiscoveredHost:
     selected: bool = False
     enabled: bool = False
     dns_provider: str | None = None
+    dns_provider_guess: str | None = None
+    dns_provider_confidence: str | None = None
+    provider_detection_source: str | None = None
     zone: str | None = None
     target_type: str | None = None
     notes: str | None = None

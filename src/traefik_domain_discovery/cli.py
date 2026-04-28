@@ -6,6 +6,7 @@ import tempfile
 from pathlib import Path
 
 from .access_log import enrich_with_access_log, read_seen_hosts
+from .dns_enrichment import enrich_with_dns_metadata
 from .docker_discovery import discover_from_docker
 from .exporters import export_hosts, export_selection_template
 from .file_provider import discover_from_file_provider
@@ -24,6 +25,11 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--traefik-api", help="read active Traefik router data from this API URL")
     parser.add_argument("--file-provider-dir", help="read Traefik dynamic YAML config from this directory")
     parser.add_argument("--access-log", help="read Traefik JSON access log and mark discovered hosts as seen")
+    parser.add_argument(
+        "--guess-dns-provider",
+        action="store_true",
+        help="best-effort DNS provider guess from authoritative nameservers",
+    )
     parser.add_argument(
         "--output",
         default=str(DEFAULT_OUTPUT_PATH),
@@ -90,6 +96,8 @@ def run_discovery(args: argparse.Namespace) -> list[DiscoveredHost]:
     if args.access_log:
         seen_hosts = read_seen_hosts(Path(args.access_log))
         enrich_with_access_log(merged, seen_hosts)
+
+    enrich_with_dns_metadata(merged, guess_provider=args.guess_dns_provider)
 
     return merged
 
