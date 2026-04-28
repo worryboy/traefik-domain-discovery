@@ -1,0 +1,41 @@
+schema_version: 1
+intent: discovery-review-only
+hosts:
+  - host: app.example.com
+    source: web
+    source_type: docker_label
+    container_name: web
+    service_name: app
+    compose_project: homelab
+    router_name: app
+    router_label_key: traefik.http.routers.app.rule
+    rule: Host(`app.example.com`)
+    rule_type: host
+    seen_in_access_log: true
+    selected: false
+    enabled: false
+  - host: traefik.example.com
+    source: examples/config.example.yaml
+    source_type: file_provider
+    source_file: examples/config.example.yaml
+    service_name: api@internal
+    router_name: dashboard
+    rule: Host(`traefik.example.com`)
+    rule_type: host
+    seen_in_access_log: false
+    selected: false
+    enabled: false
+  - host: "{subdomain:[a-z0-9-]+}.preview.example.com"
+    source: examples/config.example.yaml
+    source_type: file_provider
+    source_file: examples/config.example.yaml
+    service_name: preview-service
+    router_name: wildcard-preview
+    rule: HostRegexp(`{subdomain:[a-z0-9-]+}.preview.example.com`)
+    rule_type: hostregexp
+    regex_based: true
+    seen_in_access_log: false
+    selected: false
+    enabled: false
+    notes: HostRegexp requires review before use as a plain DNS target.
+

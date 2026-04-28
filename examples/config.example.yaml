@@ -1,0 +1,15 @@
+# Example Traefik dynamic file-provider config.
+http:
+  routers:
+    dashboard:
+      rule: Host(`traefik.example.com`)
+      service: api@internal
+      entryPoints:
+        - websecure
+    app:
+      rule: Host(`app.example.com`, `www.app.example.com`)
+      service: app-service
+    wildcard-preview:
+      rule: HostRegexp(`{subdomain:[a-z0-9-]+}.preview.example.com`)
+      service: preview-service
+

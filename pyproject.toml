@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "traefik-domain-discovery"
+version = "0.1.0"
+description = "Discover Traefik hostnames from Docker labels, file-provider config, and access logs for reviewable Dynamic DNS target preparation."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [
+  { name = "traefik-domain-discovery contributors" }
+]
+keywords = ["docker", "traefik", "dynamic-dns", "discovery", "homelab"]
+dependencies = []
+
+[project.optional-dependencies]
+yaml = ["PyYAML>=6.0"]
+
+[project.scripts]
+traefik-domain-discovery = "traefik_domain_discovery.cli:main"
+traefik-domain-discover = "traefik_domain_discovery.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]

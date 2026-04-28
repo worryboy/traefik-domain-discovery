@@ -1,0 +1,17 @@
+.DS_Store
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+dist/
+build/
+coverage.xml
+.coverage
+discovered-hosts.yaml
+discovered-hosts.json
+selected-targets.yaml
+

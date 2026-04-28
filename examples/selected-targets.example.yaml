@@ -1,0 +1,18 @@
+targets:
+  - host: app.example.com
+    enabled: false
+    dns_provider: null
+    zone: example.com
+    target_type: A
+    source: web
+    source_type: docker_label
+    notes: Review before enabling. This file is not applied automatically.
+  - host: traefik.example.com
+    enabled: false
+    dns_provider: null
+    zone: example.com
+    target_type: A
+    source: examples/config.example.yaml
+    source_type: file_provider
+    notes: Review before enabling. This file is not applied automatically.
+
