@@ -1,0 +1,7 @@
+zone_overrides:
+  candystreet.net:
+    dns_provider: internetx-xml
+  elternforum-lachen.ch:
+    dns_provider: manual
+  example.com:
+    dns_provider: manual

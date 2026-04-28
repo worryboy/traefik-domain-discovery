@@ -1,8 +1,9 @@
 from __future__ import annotations
 
-import shutil
-import subprocess
+from pathlib import Path
+from typing import Any
 
+from . import yaml_compat as yaml
 from .models import DiscoveredHost
 
 
@@ -28,63 +29,35 @@ COMMON_PUBLIC_SUFFIXES = {
 }
 
 
-PROVIDER_HINTS = {
-    "cloudflare": "cloudflare",
-    "awsdns": "route53",
-    "route53": "route53",
-    "digitalocean": "digitalocean",
-    "hetzner": "hetzner",
-    "your-server.de": "hetzner",
-    "ionos": "ionos",
-    "ui-dns": "ionos",
-    "stratoserver": "strato",
-    "rzone": "strato",
-    "netcup": "netcup",
-    "godaddy": "godaddy",
-    "domaincontrol": "godaddy",
-    "namecheap": "namecheap",
-    "registrar-servers": "namecheap",
-    "infomaniak": "infomaniak",
-    "ovh": "ovh",
-    "dnsimple": "dnsimple",
-    "dnsmadeeasy": "dnsmadeeasy",
-    "azure-dns": "azure",
-    "googledomains": "google",
-    "google.com": "google",
-    "gandi": "gandi",
-    "porkbun": "porkbun",
-    "vercel-dns": "vercel",
-    "internetx": "internetx",
-    "ns14.net": "internetx",
-    "ns15.net": "internetx",
-    "ns16.net": "internetx",
-    "ns17.net": "internetx",
-}
-
-
-def enrich_with_dns_metadata(hosts: list[DiscoveredHost], guess_provider: bool = False) -> list[DiscoveredHost]:
-    zones = {host.zone or detect_zone(host.host) for host in hosts}
-    zones.discard(None)
-    provider_guesses = {
-        zone: guess_dns_provider(zone)
-        for zone in sorted(zones)
-        if guess_provider and zone is not None
-    }
-
+def enrich_with_dns_metadata(
+    hosts: list[DiscoveredHost],
+    zone_overrides: dict[str, dict[str, str]] | None = None,
+) -> list[DiscoveredHost]:
+    normalized_overrides = _normalize_zone_overrides(zone_overrides or {})
     for host in hosts:
         host.zone = host.zone or detect_zone(host.host)
-        if not host.zone or host.zone not in provider_guesses:
+        if not host.zone:
             continue
 
-        guess = provider_guesses[host.zone]
-        if guess is None:
-            continue
-        provider, confidence, source = guess
-        host.dns_provider_guess = provider
-        host.dns_provider_confidence = confidence
-        host.provider_detection_source = source
+        override = normalized_overrides.get(host.zone.lower())
+        if override and override.get("dns_provider"):
+            host.dns_provider = override["dns_provider"]
 
     return hosts
+
+
+def load_zone_overrides(path: str | Path) -> dict[str, dict[str, str]]:
+    override_path = Path(path)
+    with override_path.open("r", encoding="utf-8") as handle:
+        payload = yaml.safe_load(handle.read()) or {}
+    if not isinstance(payload, dict):
+        raise ValueError(f"zone override file must contain a mapping: {override_path}")
+
+    raw_overrides = payload.get("zone_overrides", payload)
+    if not isinstance(raw_overrides, dict):
+        raise ValueError(f"zone override file must contain a zone_overrides mapping: {override_path}")
+
+    return _normalize_zone_overrides(raw_overrides)
 
 
 def detect_zone(hostname: str) -> str | None:
@@ -98,71 +71,6 @@ def detect_zone(hostname: str) -> str | None:
     return suffix
 
 
-def guess_dns_provider(zone: str) -> tuple[str, str, str] | None:
-    nameservers = lookup_nameservers(zone)
-    if not nameservers:
-        return None
-
-    for nameserver in nameservers:
-        normalized = nameserver.lower().rstrip(".")
-        for hint, provider in PROVIDER_HINTS.items():
-            if hint in normalized:
-                return provider, "medium", "nameserver"
-
-    return None
-
-
-def lookup_nameservers(zone: str) -> list[str]:
-    if shutil.which("dig"):
-        return _lookup_with_dig(zone)
-    if shutil.which("host"):
-        return _lookup_with_host(zone)
-    if shutil.which("nslookup"):
-        return _lookup_with_nslookup(zone)
-    return []
-
-
-def _lookup_with_dig(zone: str) -> list[str]:
-    completed = _run_dns_command(["dig", "+short", "NS", zone])
-    return [line.strip() for line in completed.splitlines() if line.strip()]
-
-
-def _lookup_with_host(zone: str) -> list[str]:
-    completed = _run_dns_command(["host", "-t", "NS", zone])
-    nameservers: list[str] = []
-    for line in completed.splitlines():
-        if " name server " not in line:
-            continue
-        nameservers.append(line.rsplit(" name server ", 1)[1].strip())
-    return nameservers
-
-
-def _lookup_with_nslookup(zone: str) -> list[str]:
-    completed = _run_dns_command(["nslookup", "-type=NS", zone])
-    nameservers: list[str] = []
-    for line in completed.splitlines():
-        if "nameserver =" in line:
-            nameservers.append(line.rsplit("nameserver =", 1)[1].strip())
-    return nameservers
-
-
-def _run_dns_command(command: list[str]) -> str:
-    try:
-        completed = subprocess.run(
-            command,
-            check=False,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.DEVNULL,
-            text=True,
-            timeout=5,
-        )
-    except (OSError, subprocess.TimeoutExpired):
-        return ""
-    if completed.returncode != 0:
-        return ""
-    return completed.stdout
-
-
 def _usable_labels(hostname: str) -> list[str]:
     labels: list[str] = []
     for raw_label in hostname.strip(".").lower().split("."):
@@ -173,3 +81,21 @@ def _usable_labels(hostname: str) -> list[str]:
             continue
         labels.append(label)
     return labels
+
+
+def _normalize_zone_overrides(raw_overrides: dict[Any, Any]) -> dict[str, dict[str, str]]:
+    overrides: dict[str, dict[str, str]] = {}
+    for raw_zone, raw_config in raw_overrides.items():
+        zone = str(raw_zone).strip(".").lower()
+        if not zone:
+            continue
+
+        if isinstance(raw_config, dict):
+            dns_provider = raw_config.get("dns_provider")
+        else:
+            dns_provider = raw_config
+
+        if dns_provider in (None, ""):
+            continue
+        overrides[zone] = {"dns_provider": str(dns_provider)}
+    return overrides

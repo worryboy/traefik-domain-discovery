@@ -9,7 +9,7 @@ It does:
 - optionally read Traefik file-provider config
 - optionally mark discovered hosts as seen in access logs
 - derive a likely DNS zone for each host
-- optionally guess the DNS provider from authoritative nameservers
+- optionally apply manual DNS provider overrides by zone
 - export reviewable YAML and JSON
 
 It does not:
@@ -64,12 +64,12 @@ Quick local example with the included sample config:
   --json-output /tmp/discovered-hosts.json
 ```
 
-Optional provider guessing:
+Optional manual zone overrides:
 
 ```bash
 ./traefik-domain-discover \
   --docker \
-  --guess-dns-provider \
+  --zone-overrides examples/zone-overrides.example.yaml \
   --output /tmp/discovered-hosts.yaml
 ```
 
@@ -81,9 +81,7 @@ The main output is a compact, deduplicated review file. Each host is listed alph
 hosts:
   - host: app.example.com
     zone: example.com
-    dns_provider_guess: internetx
-    dns_provider_confidence: medium
-    provider_detection_source: nameserver
+    dns_provider: manual
     seen_in_access_log: true
     sources:
       - type: docker_label
@@ -97,7 +95,15 @@ hosts:
 
 `HostRegexp(...)` rules are kept and include a short review note, but router names, rule text, label keys, and selection flags are not included in the default discovery output.
 
-Zone detection is a lightweight heuristic. It uses the registrable domain shape for common cases, including common multi-part suffixes such as `co.uk`; it does not ship a full public suffix database. Provider guessing is off by default and, when enabled, only uses local DNS tools such as `dig`, `host`, or `nslookup` to inspect authoritative nameservers. Treat both fields as review hints, not source of truth.
+Zone detection is a lightweight heuristic. It uses the registrable domain shape for common cases, including common multi-part suffixes such as `co.uk`; it does not ship a full public suffix database. Provider values are manual review data from an optional override file:
+
+```yaml
+zone_overrides:
+  candystreet.net:
+    dns_provider: internetx-xml
+  elternforum-lachen.ch:
+    dns_provider: manual
+```
 
 When the Traefik API is available, `--docker` plus `--traefik-api` is the preferred practical path. File-provider parsing stays optional.
 

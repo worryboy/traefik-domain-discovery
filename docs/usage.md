@@ -21,7 +21,7 @@ More complete example:
   --docker \
   --traefik-api http://127.0.0.1:8080/api/rawdata \
   --file-provider-dir /path/to/traefik/dynamic \
-  --guess-dns-provider \
+  --zone-overrides examples/zone-overrides.example.yaml \
   --access-log /var/log/traefik/access.log \
   --output /tmp/traefik-domain-discovery/discovered-hosts.yaml \
   --json-output /tmp/traefik-domain-discovery/discovered-hosts.json \
@@ -42,12 +42,13 @@ Default output is compact and intended for human review:
 hosts:
   - host: app.example.com
     zone: example.com
+    dns_provider: manual
     sources:
       - type: file_provider
         service: app-service
         file: examples/config.example.yaml
 ```
 
-Zone detection is best effort and intentionally lightweight. Provider guessing is optional with `--guess-dns-provider`; it uses authoritative nameserver hints from local DNS tools when available and should be reviewed before use.
+Zone detection is best effort and intentionally lightweight. DNS provider values are manual review data from `--zone-overrides`, not automatic guesses.
 
 Without `--output`, the default file goes to `/tmp/traefik-domain-discovery/discovered-hosts.yaml` on a typical Linux host.

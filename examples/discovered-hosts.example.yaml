@@ -3,9 +3,7 @@ intent: discovery-review-only
 hosts:
   - host: app.example.com
     zone: example.com
-    dns_provider_guess: internetx
-    dns_provider_confidence: medium
-    provider_detection_source: nameserver
+    dns_provider: manual
     seen_in_access_log: true
     sources:
       - type: docker_label
