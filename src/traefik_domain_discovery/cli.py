@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import sys
+import tempfile
 from pathlib import Path
 
 from .access_log import enrich_with_access_log, read_seen_hosts
@@ -10,28 +11,27 @@ from .exporters import export_hosts, export_selection_template
 from .file_provider import discover_from_file_provider
 from .models import DiscoveredHost, merge_hosts
 
+DEFAULT_OUTPUT_PATH = Path(tempfile.gettempdir()) / "traefik-domain-discovery" / "discovered-hosts.yaml"
+
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="traefik-domain-discover",
         description="Discover Traefik hostnames for review before Dynamic DNS target selection.",
     )
-    subparsers = parser.add_subparsers(dest="command")
-
-    discover = subparsers.add_parser("discover", help="discover hostnames from configured sources")
-    discover.add_argument("--docker", action="store_true", help="inspect running Docker containers")
-    discover.add_argument("--file-provider-dir", help="read Traefik dynamic YAML config from this directory")
-    discover.add_argument("--access-log", help="read Traefik JSON access log and mark discovered hosts as seen")
-    discover.add_argument(
+    parser.add_argument("--docker", action="store_true", help="inspect running Docker containers")
+    parser.add_argument("--file-provider-dir", help="read Traefik dynamic YAML config from this directory")
+    parser.add_argument("--access-log", help="read Traefik JSON access log and mark discovered hosts as seen")
+    parser.add_argument(
         "--output",
-        default="discovered-hosts.yaml",
+        default=str(DEFAULT_OUTPUT_PATH),
         help="write discovered hosts as YAML or JSON based on extension",
     )
-    discover.add_argument(
+    parser.add_argument(
         "--json-output",
         help="also write a JSON export to this path",
     )
-    discover.add_argument(
+    parser.add_argument(
         "--selection-template",
         help="write a reviewable selected-targets YAML template",
     )
@@ -40,12 +40,13 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: list[str] | None = None) -> int:
+    if argv is None:
+        argv = sys.argv[1:]
+    if argv and argv[0] == "discover":
+        argv = argv[1:]
+
     parser = build_parser()
     args = parser.parse_args(argv)
-
-    if args.command != "discover":
-        parser.print_help()
-        return 2
 
     try:
         hosts = run_discovery(args)

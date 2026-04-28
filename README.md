@@ -15,18 +15,20 @@ It does not:
 - call DNS provider APIs
 - decide automatically which hosts should become public DNS targets
 
-## Install
+## Run
 
 ```bash
-python3 -m venv .venv
-. .venv/bin/activate
-python -m pip install -e .
+git clone https://github.com/worryboy/traefik-domain-discovery.git
+cd traefik-domain-discovery
+./traefik-domain-discover --docker
 ```
 
-Optional, for fuller YAML support:
+No fixed install path is required. Copy or clone the repo anywhere and run it directly with `python3`.
+
+Optional, for fuller YAML support if your host does not already have PyYAML:
 
 ```bash
-python -m pip install -e ".[yaml]"
+python3 -m pip install --user PyYAML
 ```
 
 ## Usage
@@ -34,25 +36,25 @@ python -m pip install -e ".[yaml]"
 Primary command:
 
 ```bash
-traefik-domain-discover discover --docker --output discovered-hosts.yaml
+./traefik-domain-discover --docker
 ```
 
 With file-provider config and access-log enrichment:
 
 ```bash
-traefik-domain-discover discover \
+./traefik-domain-discover \
   --docker \
   --file-provider-dir /path/to/traefik/dynamic \
   --access-log /var/log/traefik/access.log \
-  --output discovered-hosts.yaml \
-  --json-output discovered-hosts.json \
-  --selection-template selected-targets.yaml
+  --output /tmp/traefik-domain-discovery/discovered-hosts.yaml \
+  --json-output /tmp/traefik-domain-discovery/discovered-hosts.json \
+  --selection-template /tmp/traefik-domain-discovery/selected-targets.yaml
 ```
 
 Quick local example with the included sample config:
 
 ```bash
-traefik-domain-discover discover \
+./traefik-domain-discover \
   --file-provider-dir examples \
   --output /tmp/discovered-hosts.yaml \
   --json-output /tmp/discovered-hosts.json
@@ -74,6 +76,8 @@ The main output is a deduplicated list of discovered hosts with review metadata 
 - `notes`
 
 `HostRegexp(...)` rules are kept, but marked as regex-based so they can be reviewed separately.
+
+If you do not pass `--output`, the default file is written to `/tmp/traefik-domain-discovery/discovered-hosts.yaml` on a typical Linux host.
 
 ## License
 

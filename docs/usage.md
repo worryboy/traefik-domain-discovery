@@ -1,35 +1,37 @@
 # Usage
 
-Install:
+Run directly from the repo:
 
 ```bash
-python3 -m venv .venv
-. .venv/bin/activate
-python -m pip install -e .
+git clone https://github.com/worryboy/traefik-domain-discovery.git
+cd traefik-domain-discovery
+./traefik-domain-discover --docker
 ```
 
 Primary command:
 
 ```bash
-traefik-domain-discover discover --docker --output discovered-hosts.yaml
+./traefik-domain-discover --docker
 ```
 
 More complete example:
 
 ```bash
-traefik-domain-discover discover \
+./traefik-domain-discover \
   --docker \
   --file-provider-dir /path/to/traefik/dynamic \
   --access-log /var/log/traefik/access.log \
-  --output discovered-hosts.yaml \
-  --json-output discovered-hosts.json \
-  --selection-template selected-targets.yaml
+  --output /tmp/traefik-domain-discovery/discovered-hosts.yaml \
+  --json-output /tmp/traefik-domain-discovery/discovered-hosts.json \
+  --selection-template /tmp/traefik-domain-discovery/selected-targets.yaml
 ```
 
 Sample config only:
 
 ```bash
-traefik-domain-discover discover \
+./traefik-domain-discover \
   --file-provider-dir examples \
   --output /tmp/discovered-hosts.yaml
 ```
+
+Without `--output`, the default file goes to `/tmp/traefik-domain-discovery/discovered-hosts.yaml` on a typical Linux host.
